@@ -78,18 +78,25 @@ class Opinion():
     def getBase(self):
         return self._base
     
-    def __init__(self, b, d, u, a):
+    def __init__(self, b, d, u = None, a = None):
         self._belief = mpmath.mpf(b)
         self._disbelief = mpmath.mpf(d)
-        self._uncertainty = mpmath.mpf(u)
-        self._base = mpmath.mpf(a)
-        self.check()
 
+        if u is None:
+            self._uncertainty = mpmath.mpf(1 - self._belief - self._disbelief)
+        else:
+            self._uncertainty = mpmath.mpf(u)
+
+        if a is None:
+            self._base = mpmath.mpf("1/2")
+        else:
+            self._base = mpmath.mpf(a)
+        self.check()
 
     def check(self):
         """
         Method for checking if this object is compliant with the subjective logic
-        constraints. 
+        constraints.
         """
         if not (
                 (mpmath.almosteq(self._belief, mpmath.mpf("0"),epsilon) or mpmath.almosteq(self._belief, mpmath.mpf("1"),epsilon) or (self._belief >= 0 and self._belief <= 1)) and
@@ -115,7 +122,7 @@ class Opinion():
         if result is NotImplemented:
             return result
         return not result
-        
+
     def __repr__(self):
         return "<"+str(self._belief)+", "+str(self._disbelief)+", "+ str(self._uncertainty) +", " + str(self._base)+">"
 
@@ -149,55 +156,55 @@ class Opinion():
         X,Y,U,V = zip(numpy.array([0,0,float(self.get_x_cartesian()), float(self.get_y_cartesian())]))
         pylab.quiver(X,Y,U,V,angles='xy',scale_units='xy',scale=1)
         pylab.show()
-        
+
     def plot_point(self):
         self.plot_basic()
         pylab.plot(float(self.get_x_cartesian()), float(self.get_y_cartesian()), marker='o')
         pylab.show()
-        
+
     def get_angle_alpha(self):
         if (mpmath.almosteq(self.getBelief(), 1, epsilon)):
             return mpmath.mpf("0")
         return mpmath.atan((self.getUncertainty() * mpmath.sin(mpmath.pi/mpmath.mpf("3"))) / (self.getDisbelief() + self.getUncertainty() * mpmath.cos(math.pi/mpmath.mpf("3"))))
-    
+
     def get_angle_beta(self):
         if mpmath.almosteq(self.getDisbelief(), 1, epsilon):
             return mpmath.pi/3
         return mpmath.atan((self.getUncertainty() * mpmath.sin(mpmath.pi/mpmath.mpf("3"))) / (mpmath.mpf("1") - (self.getDisbelief() + self.getUncertainty() * mpmath.cos(mpmath.pi/mpmath.mpf("3")))))
-    
+
     def get_angle_gamma(self):
         return ((mpmath.pi/3) - self.get_angle_beta())
-    
+
     def get_angle_delta(self):
         if mpmath.almosteq(self.getUncertainty(), 1, epsilon):
             return mpmath.mpf("0")
         else:
             return mpmath.asin(self.getBelief() / self.get_length_to_uncertainty())
-    
+
     def get_angle_epsilon(self):
         return (mpmath.pi - self.get_angle_gamma() - self.get_angle_delta())
-    
+
     def get_length_to_uncertainty(self):
         return mpmath.sqrt( (mpmath.mpf("1/3") * \
                              mpmath.power((1 + self._disbelief - self._uncertainty), mpmath.mpf("2"))) + \
                            mpmath.power((self._belief), mpmath.mpf("2")))
-    
+
     def get_max_x_cartesian(self):
         return (mpmath.mpf("2") - self.get_y_cartesian() + mpmath.tan(self.get_angle_alpha()) * self.get_x_cartesian()) / (mpmath.tan(self.get_angle_alpha()) + mpmath.sqrt("3"))
-    
+
     def get_max_y_cartesian(self):
         return (- mpmath.sqrt("3") * self.get_x_cartesian()) + mpmath.mpf("2")
-    
+
     def get_magnitude_ratio(self):
         return (mpmath.sqrt(mpmath.power(self.get_x_cartesian(), mpmath.mpf("2")) + \
                             mpmath.power(self.get_y_cartesian(), mpmath.mpf("2"))) / \
                 (mpmath.sqrt(mpmath.power(self.get_max_x_cartesian(), mpmath.mpf("2")) \
                              + mpmath.power(self.get_max_y_cartesian(), mpmath.mpf("2")))))
-        
+
     def expected_value(self):
         return self.getBelief() + self.getUncertainty() * self.getBase()
-    
-    
+
+
     def distance(self, another):
         """
         This method computes the Euclidean distance with another opinion and returns it
@@ -206,10 +213,13 @@ class Opinion():
                            mpmath.power(self.getDisbelief() - another.getDisbelief(), mpmath.mpf("2")) + \
                            mpmath.power(self.getUncertainty() - another.getUncertainty(), mpmath.mpf("2"))\
                            )
-        
+
     def distance_expected_value(self, another):
         """
         This method computes the distance between the two expected values
         """
         return mpmath.absmax(self.expected_value() - another.expected_value())
-        
+
+    def get_beta_distribution_parameters(self, W = 2):
+        prior = mpmath.mpf(W)
+        return [prior/self.getUncertainty() * self.getBelief() + prior * self.getBase(), prior/self.getUncertainty() * self.getDisbelief() + prior * (1-self.getBase())]
