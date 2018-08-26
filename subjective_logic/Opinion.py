@@ -78,13 +78,20 @@ class Opinion():
     def getBase(self):
         return self._base
     
-    def __init__(self, b, d, u, a):
+    def __init__(self, b, d, u = None, a = None):
         self._belief = mpmath.mpf(b)
         self._disbelief = mpmath.mpf(d)
-        self._uncertainty = mpmath.mpf(u)
-        self._base = mpmath.mpf(a)
-        self.check()
 
+        if u is None:
+            self._uncertainty = mpmath.mpf(1 - self._belief - self._disbelief)
+        else:
+            self._uncertainty = mpmath.mpf(u)
+
+        if a is None:
+            self._base = mpmath.mpf("1/2")
+        else:
+            self._base = mpmath.mpf(a)
+        self.check()
 
     def check(self):
         """
@@ -212,4 +219,7 @@ class Opinion():
         This method computes the distance between the two expected values
         """
         return mpmath.absmax(self.expected_value() - another.expected_value())
-        
+
+    def get_beta_distribution_parameters(self, W = 2):
+        prior = mpmath.mpf(W)
+        return [prior/self.getUncertainty() * self.getBelief() + prior * self.getBase(), prior/self.getUncertainty() * self.getDisbelief() + prior * (1-self.getBase())]
