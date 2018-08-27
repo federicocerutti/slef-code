@@ -59,6 +59,11 @@ def get_random_opinion_different(op):
                 return r
     else:
         raise Exception("Opinion object expected")
+
+def get_opinion_from_beta(alpha, beta, a = 1/2, W=2):
+    rx = max(0, alpha - a * W)
+    sx = max(0, beta - (1 - a) * W)
+    return Opinion((rx / (rx + sx + W)), (sx / (rx + sx + W)), (W / (rx + sx + W)), a)
                 
 
 class Opinion():
