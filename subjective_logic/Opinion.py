@@ -64,6 +64,9 @@ def get_opinion_from_beta(alpha, beta, a = 1/2, W=2):
     rx = max(0, alpha - a * W)
     sx = max(0, beta - (1 - a) * W)
     return Opinion((rx / (rx + sx + W)), (sx / (rx + sx + W)), (W / (rx + sx + W)), a)
+
+def get_opinion_from_list(l):
+    return Opinion(l[0], l[1], l[2], l[3])
                 
 
 class Opinion():
@@ -228,3 +231,6 @@ class Opinion():
     def get_beta_distribution_parameters(self, W = 2):
         prior = mpmath.mpf(W)
         return [prior/self.getUncertainty() * self.getBelief() + prior * self.getBase(), prior/self.getUncertainty() * self.getDisbelief() + prior * (1-self.getBase())]
+
+    def toList(self):
+        return [float(self.getBelief()), float(self.getDisbelief()), float(self.getUncertainty()), float(self.getBase())]
