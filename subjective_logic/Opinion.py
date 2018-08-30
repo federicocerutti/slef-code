@@ -33,7 +33,7 @@ import numpy
 import pylab
 from config import epsilon
 import sys
-from beta_distribution import BetaDistribution
+from beta_distribution.BetaDistribution import BetaDistribution
 
 def get_random_opinion():
     """
@@ -231,7 +231,22 @@ class Opinion():
 
     def get_beta_distribution_parameters(self, W = 2):
         prior = mpmath.mpf(W)
-        return [prior/self.getUncertainty() * self.getBelief() + prior * self.getBase(), prior/self.getUncertainty() * self.getDisbelief() + prior * (1-self.getBase())]
+
+        uncertainty = self.getUncertainty()
+        if self.getUncertainty() == 0:
+            uncertainty = mpmath.mpf("1e-12")
+
+        disbelief = self.getDisbelief()
+        if self.getDisbelief() == 0:
+            disbelief = mpmath.mpf("1e-12")
+
+        belief = self.getBelief()
+        if self.getBelief() == 0:
+            belief = mpmath.mpf("1e-12")
+
+        return [prior/uncertainty * self.getBelief() + prior * self.getBase(), prior/uncertainty * self.getDisbelief() + prior * (1-self.getBase())]
+
+        #return [(1.0 + belief - disbelief)/uncertainty, (1.0 - belief + disbelief)/uncertainty]
 
     def getBetaDistribution(self):
         [alpha, beta] = self.get_beta_distribution_parameters()
@@ -244,23 +259,89 @@ class Opinion():
         if not isinstance(y, Opinion):
             raise NotAnOpinionException(y)
 
-        return (self.getBetaDistribution().sum(y.getBetaDistribution())).getOpinion()
+        return self._get_opinion_from_Beta(self.getBetaDistribution().sum(y.getBetaDistribution()))
 
     def betaUnion(self, y):
         if not isinstance(y, Opinion):
             raise NotAnOpinionException(y)
 
-        return (self.getBetaDistribution().union(y.getBetaDistribution())).getOpinion()
+        return self._get_opinion_from_Beta(self.getBetaDistribution().union(y.getBetaDistribution()))
 
     def betaProduct(self, y):
         if not isinstance(y, Opinion):
             raise NotAnOpinionException(y)
 
-        return (self.getBetaDistribution().product(y.getBetaDistribution())).getOpinion()
+        return self._get_opinion_from_Beta(self.getBetaDistribution().product(y.getBetaDistribution()))
 
     def betaDivision(self, y):
         if not isinstance(y, Opinion):
             raise NotAnOpinionException(y)
 
-        return (self.getBetaDistribution().division(y.getBetaDistribution())).getOpinion()
+        return self._get_opinion_from_Beta(self.getBetaDistribution().division(y.getBetaDistribution()))
+
+    def _get_opinion_from_Beta(self, Bdist, a = 1/2, W = 2):
+        alpha = Bdist.getAlpha()
+        beta = Bdist.getBeta()
+        rx = max(0, alpha - a * W)
+        sx = max(0, beta - (1 - a) * W)
+        return Opinion((rx / (rx + sx + W)), (sx / (rx + sx + W)), (W / (rx + sx + W)), a)
+
+    def plus(self, y):
+        if not isinstance(y, Opinion):
+            raise NotAnOpinionException(y)
+
+        [b1,d1,u1,a1] = [self.getBelief(), self.getDisbelief(), self.getUncertainty(), self.getBase()]
+        [b2,d2,u2,a2] = [y.getBelief(), y.getDisbelief(), y.getUncertainty(), y.getBase()]
+        u = (a1 * u1 + a2 * u2) / (a1 + a2)
+        d = max(0.0, (a1 * (d1 - b2) + a2 * (d2 - b1)) / (a1 + a2))
+        b = min(b1 + b2, 1.0)
+        a = min(a1 + a2, 1.0)
+        return Opinion(b,d,u,a)
+
+    def times(self, y):
+        if not isinstance(y, Opinion):
+            raise NotAnOpinionException(y)
+
+        [b1, d1, u1, a1] = [self.getBelief(), self.getDisbelief(), self.getUncertainty(), self.getBase()]
+        [b2, d2, u2, a2] = [y.getBelief(), y.getDisbelief(), y.getUncertainty(), y.getBase()]
+
+        a = a1 * a2
+        b = b1 * b2 + ((1 - a1) * a2 * b1 * u2 + a1 * (1 - a2) * u1 * b2) / (1 - a1 * a2)
+        u = u1 * u2 + ((1 - a2) * b1 * u2 + (1 - a1) * u1 * b2) / (1 - a1 * a2)
+        d = min(1, d1 + d2 - d1 * d2)
+        return Opinion(b, d, u, a)
+
+    def negate(self):
+        return Opinion(self.getDisbelief(),self.getBelief(),self.getUncertainty(),1 - float(self.getBase()))
+
+    def division(self, y):
+        if not isinstance(y, Opinion):
+            raise NotAnOpinionException(y)
+
+        if float(y.getBelief()) == 1.0:
+            return self
+
+        [b1, d1, u1, a1] = [self.getBelief(), self.getDisbelief(), self.getUncertainty(), self.getBase()]
+        [b2, d2, u2, a2] = [y.getBelief(), y.getDisbelief(), y.getUncertainty(), y.getBase()]
+
+        e1 = b1 + u1*a1
+        e2 = b2+ u2 * a2
+
+        if not ((a1<=a2) and (d1>=d2) and (b1*(1-a1)*a2*(1-d2) >= a1*(1-a2)*(1-d1)*b2) and (u1*(1-a1)*(1-d2)>=u2*(1-a2)*(1-d1)) and a2!=0 ):
+            return Opinion(0.0, 0.0, 1.0, 0.5)
+        else:
+            a = a1/a2
+            b = 0.0
+            d = 0.0
+            u = 0.0
+            if e1 == 0:
+                d = 1.0
+            elif a==1:
+                b = 1.0
+            else:
+                e = e1 / e2
+                d = min(max(0, (d1 - d2) / (1 - d2)), 1)
+                u = min(max(0, (1 - d - e) / (1 - a)), 1)
+                b = min(max(0, (1 - d - u)), 1)
+            return Opinion(b,d,u,a)
 

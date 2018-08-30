@@ -32,8 +32,6 @@ import scipy.special
 import numpy
 import pylab
 
-from subjective_logic import Opinion
-
 class BetaDistribution():
 
     def getAlpha(self):
@@ -50,7 +48,7 @@ class BetaDistribution():
 
 
     def check(self):
-        if not(self._alpha >= 0 and self._beta >= 0):
+        if not(self._alpha > 0 and self._beta > 0):
             raise NotABetaDistributionException(self)
 
     def __repr__(self):
@@ -86,8 +84,10 @@ class BetaDistribution():
         return float(self.getAlpha() * self.getBeta() / ( (self.getAlpha() + self.getBeta())**2  * (self.getAlpha() + self.getBeta() + 1) ))
 
     def _moment_matching(self, mean, var):
-        alpha = max(0, mean * ((mean * (1 - mean)) / var - 1))
-        beta = max(0, (1 - mean) * ((mean * (1 - mean)) / var - 1))
+        alpha = max(0.0000000000000001, mean * ((mean * (1 - mean)) / var - 1))
+        beta = max(0.0000000000000001, (1 - mean) * ((mean * (1 - mean)) / var - 1))
+        # alpha = max(0.1, mean * (mean - mean**2 - var) / var)
+        # beta = max(0.1, (1.0 - mean) * (mean - mean**2 - var) / var )
         return [alpha, beta]
 
     def union(self, Y):
@@ -132,14 +132,9 @@ class BetaDistribution():
 
         mean = scipy.special.beta(self.getAlpha() + 1, self.getBeta()) * scipy.special.beta(Y.getAlpha() - 1, Y.getBeta()) / \
                (scipy.special.beta(self.getAlpha(), self.getBeta()) * scipy.special.beta(Y.getAlpha(), Y.getBeta()))
-        var = mean = scipy.special.beta(self.getAlpha() + 2, self.getBeta()) * scipy.special.beta(Y.getAlpha() - 2, Y.getBeta()) / \
+        var = scipy.special.beta(self.getAlpha() + 2, self.getBeta()) * scipy.special.beta(Y.getAlpha() - 2, Y.getBeta()) / \
                (scipy.special.beta(self.getAlpha(), self.getBeta()) * scipy.special.beta(Y.getAlpha(), Y.getBeta()))
 
         [alpha, beta] = self._moment_matching(mean, var)
 
         return BetaDistribution(alpha, beta)
-
-    def getOpinion(self, a =1/2, W = 1/2):
-        rx = max(0, self.getAlpha() - a * W)
-        sx = max(0, self.getBeta() - (1 - a) * W)
-        return Opinion((rx / (rx + sx + W)), (sx / (rx + sx + W)), (W / (rx + sx + W)), a)
