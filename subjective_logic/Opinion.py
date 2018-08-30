@@ -33,6 +33,7 @@ import numpy
 import pylab
 from config import epsilon
 import sys
+from beta_distribution import BetaDistribution
 
 def get_random_opinion():
     """
@@ -232,5 +233,34 @@ class Opinion():
         prior = mpmath.mpf(W)
         return [prior/self.getUncertainty() * self.getBelief() + prior * self.getBase(), prior/self.getUncertainty() * self.getDisbelief() + prior * (1-self.getBase())]
 
+    def getBetaDistribution(self):
+        [alpha, beta] = self.get_beta_distribution_parameters()
+        return BetaDistribution(alpha, beta)
+
     def toList(self):
         return [float(self.getBelief()), float(self.getDisbelief()), float(self.getUncertainty()), float(self.getBase())]
+
+    def betaSum(self, y):
+        if not isinstance(y, Opinion):
+            raise NotAnOpinionException(y)
+
+        return (self.getBetaDistribution().sum(y.getBetaDistribution())).getOpinion()
+
+    def betaUnion(self, y):
+        if not isinstance(y, Opinion):
+            raise NotAnOpinionException(y)
+
+        return (self.getBetaDistribution().union(y.getBetaDistribution())).getOpinion()
+
+    def betaProduct(self, y):
+        if not isinstance(y, Opinion):
+            raise NotAnOpinionException(y)
+
+        return (self.getBetaDistribution().product(y.getBetaDistribution())).getOpinion()
+
+    def betaDivision(self, y):
+        if not isinstance(y, Opinion):
+            raise NotAnOpinionException(y)
+
+        return (self.getBetaDistribution().division(y.getBetaDistribution())).getOpinion()
+

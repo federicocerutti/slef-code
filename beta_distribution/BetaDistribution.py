@@ -85,6 +85,11 @@ class BetaDistribution():
     def variance(self):
         return float(self.getAlpha() * self.getBeta() / ( (self.getAlpha() + self.getBeta())**2  * (self.getAlpha() + self.getBeta() + 1) ))
 
+    def _moment_matching(self, mean, var):
+        alpha = max(0, mean * ((mean * (1 - mean)) / var - 1))
+        beta = max(0, (1 - mean) * ((mean * (1 - mean)) / var - 1))
+        return [alpha, beta]
+
     def union(self, Y):
         if not isinstance(Y, BetaDistribution):
             raise NotABetaDistributionException(Y)
@@ -94,8 +99,7 @@ class BetaDistribution():
             Y.variance() + 2 * self.mean() * Y.variance() + \
             self.variance() * Y.variance() + self.variance() * (Y.mean())**2 + (self.mean())**2 * Y.variance()
 
-        alpha = max(0, mean * ((mean * (1 - mean)) / var - 1))
-        beta = max(0, (1 - mean) * ((mean * (1 - mean)) / var - 1))
+        [alpha, beta] = self._moment_matching(mean, var)
 
         return BetaDistribution(alpha, beta)
 
@@ -106,8 +110,7 @@ class BetaDistribution():
         mean = self.mean() + Y.mean()
         var = self.variance() + Y.variance()
 
-        alpha = max(0, mean * ((mean * (1 - mean)) / var - 1))
-        beta = max(0, (1 - mean) * ((mean * (1 - mean)) / var - 1))
+        [alpha, beta] = self._moment_matching(mean, var)
 
         return BetaDistribution(alpha, beta)
 
@@ -119,8 +122,7 @@ class BetaDistribution():
         var = self.variance() * Y.variance() + \
               self.variance() * (Y.mean())**2 + Y.variance() * (self.mean()) ** 2
 
-        alpha = max(0, mean * ((mean * (1 - mean)) / var - 1))
-        beta = max(0, (1 - mean) * ((mean * (1 - mean)) / var - 1))
+        [alpha, beta] = self._moment_matching(mean, var)
 
         return BetaDistribution(alpha, beta)
 
@@ -133,8 +135,7 @@ class BetaDistribution():
         var = mean = scipy.special.beta(self.getAlpha() + 2, self.getBeta()) * scipy.special.beta(Y.getAlpha() - 2, Y.getBeta()) / \
                (scipy.special.beta(self.getAlpha(), self.getBeta()) * scipy.special.beta(Y.getAlpha(), Y.getBeta()))
 
-        alpha = max(0, mean * ((mean * (1 - mean)) / var - 1))
-        beta = max(0, (1 - mean) * ((mean * (1 - mean)) / var - 1))
+        [alpha, beta] = self._moment_matching(mean, var)
 
         return BetaDistribution(alpha, beta)
 

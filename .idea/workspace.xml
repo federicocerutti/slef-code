@@ -26,20 +26,23 @@
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="Opinion.py" pinned="false" current-in-tab="false">
+      <file leaf-file-name="Opinion.py" pinned="false" current-in-tab="true">
         <entry file="file://$PROJECT_DIR$/subjective_logic/Opinion.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="281">
-              <caret line="65" column="86" lean-forward="true" selection-start-line="63" selection-start-column="4" selection-end-line="65" selection-end-column="86" />
+            <state relative-caret-position="673">
+              <caret line="264" column="51" selection-start-line="264" selection-start-column="51" selection-end-line="264" selection-end-column="51" />
+              <folding>
+                <element signature="e#1206#1217#0" expanded="true" />
+              </folding>
             </state>
           </provider>
         </entry>
       </file>
-      <file leaf-file-name="BetaDistribution.py" pinned="false" current-in-tab="true">
+      <file leaf-file-name="BetaDistribution.py" pinned="false" current-in-tab="false">
         <entry file="file://$PROJECT_DIR$/beta_distribution/BetaDistribution.py">
           <provider selected="true" editor-type-id="text-editor">
-            <state relative-caret-position="643">
-              <caret line="142" column="35" selection-start-line="142" selection-start-column="35" selection-end-line="142" selection-end-column="35" />
+            <state relative-caret-position="866">
+              <caret line="141" column="18" selection-start-line="141" selection-start-column="8" selection-end-line="141" selection-end-column="18" />
               <folding>
                 <element signature="e#1177#1188#0" expanded="true" />
               </folding>
@@ -57,8 +60,8 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/subjective_logic/Opinion.py" />
         <option value="$PROJECT_DIR$/beta_distribution/BetaDistribution.py" />
+        <option value="$PROJECT_DIR$/subjective_logic/Opinion.py" />
       </list>
     </option>
   </component>
@@ -183,19 +186,22 @@
         <state relative-caret-position="-1218" />
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/subjective_logic/Opinion.py">
+    <entry file="file://$PROJECT_DIR$/beta_distribution/BetaDistribution.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="281">
-          <caret line="65" column="86" lean-forward="true" selection-start-line="63" selection-start-column="4" selection-end-line="65" selection-end-column="86" />
+        <state relative-caret-position="866">
+          <caret line="141" column="18" selection-start-line="141" selection-start-column="8" selection-end-line="141" selection-end-column="18" />
+          <folding>
+            <element signature="e#1177#1188#0" expanded="true" />
+          </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/beta_distribution/BetaDistribution.py">
+    <entry file="file://$PROJECT_DIR$/subjective_logic/Opinion.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="643">
-          <caret line="142" column="35" selection-start-line="142" selection-start-column="35" selection-end-line="142" selection-end-column="35" />
+        <state relative-caret-position="673">
+          <caret line="264" column="51" selection-start-line="264" selection-start-column="51" selection-end-line="264" selection-end-column="51" />
           <folding>
-            <element signature="e#1177#1188#0" expanded="true" />
+            <element signature="e#1206#1217#0" expanded="true" />
           </folding>
         </state>
       </provider>
