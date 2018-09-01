@@ -211,3 +211,33 @@ def discount_UAI_referee(t, c):
                    c.getBelief() * t.getUncertainty() + c.getUncertainty(),
                    "1/2"
                    )
+
+
+def fusion_problog(pos,neg, a=0.5, W=2):
+    mean = pos.expected_value() / (pos.expected_value() + neg.expected_value())
+    bpos = pos.getBetaDistribution()
+    bneg = neg.getBetaDistribution()
+    den = bpos.sum(bneg)
+
+    resbeta = bpos.division(den)
+
+    alpha = resbeta.getAlpha()
+    beta = resbeta.getBeta()
+    #
+    # if mean >= 1.0:
+    #     return Opinion(1.0, 0.0, 0.0, 0.5)
+    # if mean <= 0.0:
+    #     return Opinion(0.0, 1.0, 0.0, 0.5)
+    #
+    # #var = float(bpos.variance()) + float(bneg.variance())
+    #
+    # var = mean**2 * (1-mean)**2 * (float(bpos.variance()) * float(bneg.variance()) +float(bpos.variance()) * neg.expected_value()**2 + float(bneg.variance()) * pos.expected_value()**2)/(pos.expected_value() + neg.expected_value())
+    #
+    # var = max(var,mean**2 * (1.0 - mean) / (1.0+mean), (1.0-mean)**2 * mean / (2 - mean) )
+    #
+    # alpha = max(0.0000000000000001, mean * ((mean * (1 - mean)) / var - 1))
+    # beta = max(0.0000000000000001, (1 - mean) * ((mean * (1 - mean)) / var - 1))
+
+    rx = max(0, alpha - a * W)
+    sx = max(0, beta - (1 - a) * W)
+    return Opinion((rx / (rx + sx + W)), (sx / (rx + sx + W)), (W / (rx + sx + W)), a)

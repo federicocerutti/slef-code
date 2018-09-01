@@ -27,6 +27,7 @@ Package for creating a beta distribution
 
 import math
 from NotABetaDistributionException import *
+import pulp
 
 import scipy.special
 import numpy
@@ -103,6 +104,19 @@ class BetaDistribution():
 
         return BetaDistribution(alpha, beta)
 
+    def unionMinus(self, Y):
+        if not isinstance(Y, BetaDistribution):
+            raise NotABetaDistributionException(Y)
+
+        mean = self.mean() - Y.mean() + self.mean() * Y.mean()
+        var = self.variance() + 2 * Y.mean() * self.variance() + \
+            Y.variance() + 2 * self.mean() * Y.variance() + \
+            self.variance() * Y.variance() + self.variance() * (Y.mean())**2 + (self.mean())**2 * Y.variance()
+
+        [alpha, beta] = self._moment_matching(mean, var)
+
+        return BetaDistribution(alpha, beta)
+
     def sum(self, Y):
         if not isinstance(Y, BetaDistribution):
             raise NotABetaDistributionException(Y)
@@ -135,6 +149,88 @@ class BetaDistribution():
         var = scipy.special.beta(self.getAlpha() + 2, self.getBeta()) * scipy.special.beta(Y.getAlpha() - 2, Y.getBeta()) / \
                (scipy.special.beta(self.getAlpha(), self.getBeta()) * scipy.special.beta(Y.getAlpha(), Y.getBeta()))
 
+        var = max(var, mean**2 * (1.0 - mean) / (1.0+mean), (1.0-mean)**2 * mean / (2 - mean))
+
         [alpha, beta] = self._moment_matching(mean, var)
+
+        # if (alpha < 0.1 or beta < 0.1):
+        #
+        #     #if self.variance() < 0.1 or Y.variance() <0.1:
+        #         #print("Uncertain Beta. (%s, %s) / (%s, %s) = (Mean: %s, Var: %s) " % (str(self.mean()), str(self.variance()), str(Y.mean()), str(Y.variance()), mean, var))
+        #         #print("Ratio of means: %s" % str(float(self.mean())/float(Y.mean())))
+        #
+        #     mean = float(self.mean())/ float(Y.mean())
+        #     # var = float(Y.variance())
+        #     #
+        #     # [alpha, beta] = self._moment_matching(mean, var)
+        #     #
+        #     # if (alpha < 0.1 or beta < 0.1):
+        #     #     print("Uncertain Beta. (%s, %s) / (%s, %s) = (Mean: %s, Var: %s) " % (
+        #     #     str(self.mean()), str(self.variance()), str(Y.mean()), str(Y.variance()), mean, var))
+        #     #     print("Ratio of means: %s" % str(float(self.mean())/float(Y.mean())))
+        #
+        #     #
+        #     # uncertainty = 0.0
+        #     # belief = 0.0
+        #     # lp = pulp.LpProblem("Max Uncertainty", pulp.LpMaximize)
+        #     # u = pulp.LpVariable('b', lowBound=0.0, upBound=1.0, cat='Continuous')
+        #     # b = pulp.LpVariable('u', lowBound=0.0, upBound=1.0, cat='Continuous')
+        #     # lp += 1 * u, "Z"
+        #     # lp += b + 0.5 * u <= mean
+        #     # lp += b + 0.5 * u >= mean
+        #     # lp += b + u <= 1.0
+        #     # lp.solve()
+        #     #
+        #     # valueu = 0.0
+        #     # valueb = 0.0
+        #     #
+        #     # for variable in lp.variables():
+        #     #     if variable.name == 'b':
+        #     #         valueb = variable.varValue
+        #     #     elif variable.name == 'u':
+        #     #         valueu = variable.varValue
+        #     #
+        #     # if valueu == 0:
+        #     #     valueu = 0.0000001
+        #     #
+        #     valueu = 0.0
+        #     valueb = 0.0
+        #     if 0 < mean <= 0.5:
+        #         valueu = mean * 2
+        #     elif 0.5 < mean <= 0.666:
+        #         uncertainty = 0.0
+        #         belief = 0.0
+        #         lp = pulp.LpProblem("Max Uncertainty", pulp.LpMaximize)
+        #         u = pulp.LpVariable('b', lowBound=0.0, upBound=1.0, cat='Continuous')
+        #         b = pulp.LpVariable('u', lowBound=0.0, upBound=1.0, cat='Continuous')
+        #         lp += 1 * u, "Z"
+        #         lp += b + 0.5 * u <= mean
+        #         lp += b + 0.5 * u >= mean
+        #         lp += b + u <= 1.0
+        #         lp.solve()
+        #
+        #         for variable in lp.variables():
+        #             if variable.name == 'b':
+        #                 valueb = variable.varValue
+        #             elif variable.name == 'u':
+        #                 valueu = variable.varValue
+        #     elif 0.66 < mean <= 1.0:
+        #         lp = pulp.LpProblem("Max Uncertainty", pulp.LpMinimize)
+        #         u = pulp.LpVariable('b', lowBound=0.0, upBound=1.0, cat='Continuous')
+        #         b = pulp.LpVariable('u', lowBound=0.0, upBound=1.0, cat='Continuous')
+        #         lp += 1 * u, "Z"
+        #         lp += b + 0.5 * u <= mean
+        #         lp += b + 0.5 * u >= mean
+        #         lp += b + u <= 1.0
+        #         lp.solve()
+        #
+        #         for variable in lp.variables():
+        #             if variable.name == 'b':
+        #                 valueb = variable.varValue
+        #             elif variable.name == 'u':
+        #                 valueu = variable.varValue
+        #
+        #     alpha = 2.0/valueu * valueb + 1
+        #     beta = 2.0/valueu * (1 - valueb - valueu) + 1
 
         return BetaDistribution(alpha, beta)

@@ -267,6 +267,12 @@ class Opinion():
 
         return self._get_opinion_from_Beta(self.getBetaDistribution().union(y.getBetaDistribution()))
 
+    def betaUnionMinus(self, y):
+        if not isinstance(y, Opinion):
+            raise NotAnOpinionException(y)
+
+        return self._get_opinion_from_Beta(self.getBetaDistribution().unionMinus(y.getBetaDistribution()))
+
     def betaProduct(self, y):
         if not isinstance(y, Opinion):
             raise NotAnOpinionException(y)
@@ -278,6 +284,7 @@ class Opinion():
             raise NotAnOpinionException(y)
 
         return self._get_opinion_from_Beta(self.getBetaDistribution().division(y.getBetaDistribution()))
+
 
     def _get_opinion_from_Beta(self, Bdist, a = 1/2, W = 2):
         alpha = Bdist.getAlpha()
@@ -294,7 +301,8 @@ class Opinion():
         [b2,d2,u2,a2] = [y.getBelief(), y.getDisbelief(), y.getUncertainty(), y.getBase()]
         u = (a1 * u1 + a2 * u2) / (a1 + a2)
         d = max(0.0, (a1 * (d1 - b2) + a2 * (d2 - b1)) / (a1 + a2))
-        b = min(b1 + b2, 1.0)
+        #b = min(b1 + b2, 1.0)
+        b = 1 - u - d
         a = min(a1 + a2, 1.0)
         return Opinion(b,d,u,a)
 
