@@ -85,8 +85,14 @@ class BetaDistribution():
         return float(self.getAlpha() * self.getBeta() / ( (self.getAlpha() + self.getBeta())**2  * (self.getAlpha() + self.getBeta() + 1) ))
 
     def _moment_matching(self, mean, var):
-        alpha = max(0.0000000000000001, mean * ((mean * (1 - mean)) / var - 1))
-        beta = max(0.0000000000000001, (1 - mean) * ((mean * (1 - mean)) / var - 1))
+
+        sx = ((mean * (1 - mean)) / var - 1)
+
+        # if mean * (1-mean) < 1e-2 and var < 1e-4:
+        #     sx = 1.0 / var
+
+        alpha = max(0.01, mean * sx)
+        beta = max(0.01, (1 - mean) * sx)
         # alpha = max(0.1, mean * (mean - mean**2 - var) / var)
         # beta = max(0.1, (1.0 - mean) * (mean - mean**2 - var) / var )
         return [alpha, beta]
@@ -144,14 +150,42 @@ class BetaDistribution():
         if not isinstance(Y, BetaDistribution):
             raise NotABetaDistributionException(Y)
 
-        mean = scipy.special.beta(self.getAlpha() + 1, self.getBeta()) * scipy.special.beta(Y.getAlpha() - 1, Y.getBeta()) / \
-               (scipy.special.beta(self.getAlpha(), self.getBeta()) * scipy.special.beta(Y.getAlpha(), Y.getBeta()))
-        var = scipy.special.beta(self.getAlpha() + 2, self.getBeta()) * scipy.special.beta(Y.getAlpha() - 2, Y.getBeta()) / \
-               (scipy.special.beta(self.getAlpha(), self.getBeta()) * scipy.special.beta(Y.getAlpha(), Y.getBeta()))
+        # if self.mean() > Y.mean():
+        #     print("%s / %s " % (str(self), str(Y)))
+        #     return BetaDistribution(1,1)
 
-        var = max(var, mean**2 * (1.0 - mean) / (1.0+mean), (1.0-mean)**2 * mean / (2 - mean))
+        # mean = max(1e-6, min(1.0-1e-6, scipy.special.beta(self.getAlpha() + 1, self.getBeta()) * scipy.special.beta(Y.getAlpha() - 1, Y.getBeta()) / \
+        #         (scipy.special.beta(self.getAlpha(), self.getBeta()) * scipy.special.beta(Y.getAlpha(), Y.getBeta()))))
+
+        mean = min(1.0-1e-6, self.mean() / Y.mean())
+
+        var = (self.variance() + self.mean()**2) * (Y.variance()+Y.mean()**2)/(Y.mean()**4) - (self.mean()/Y.mean())**2
+
+        # var = scipy.special.beta(self.getAlpha() + 2, self.getBeta()) * scipy.special.beta(Y.getAlpha() - 2, Y.getBeta()) / \
+        #        (scipy.special.beta(self.getAlpha(), self.getBeta()) * scipy.special.beta(Y.getAlpha(), Y.getBeta()))
+
+        var = min(var, mean ** 2 * (1.0 - mean) / (1.0 + mean), (1.0 - mean) ** 2 * mean / (2 - mean))
 
         [alpha, beta] = self._moment_matching(mean, var)
+
+        # sx = mean * (1.0-mean) / var - 1
+        #
+        # if mean == 0.0 or mean == 1.0:
+        #     sx = 1e10
+        # else:
+        #     sx = max(sx, 1.0/mean, 1.0/(1.0-mean))
+        #
+        #
+        # alpha = 0.0
+        # beta = 0.0
+        #
+        # if mean == 0.0:
+        #     [alpha, beta] = [1, sx]
+        # elif mean == 1.0:
+        #     [alpha, beta] = [sx, 1]
+        # else:
+        #     [alpha, beta] = [mean * sx, (1.0 - mean) * sx]
+
 
         # if (alpha < 0.1 or beta < 0.1):
         #
