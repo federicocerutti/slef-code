@@ -55,6 +55,11 @@ class BetaDistribution():
     def __repr__(self):
         return "BetaDistribution("+repr(self._alpha)+","+repr(self._beta)+")"
 
+    def isCompleteBelief(self):
+        if self.getAlpha() > 10000 and self.getBeta() < 10:
+            return True
+        return False
+
 
     def distribution(self, p):
         if not(p >= 0 and p <= 1):
@@ -146,6 +151,9 @@ class BetaDistribution():
 
         return BetaDistribution(alpha, beta)
 
+    def negate(self):
+        return BetaDistribution(self.getBeta(), self.getAlpha())
+
     def division(self, Y):
         if not isinstance(Y, BetaDistribution):
             raise NotABetaDistributionException(Y)
@@ -160,6 +168,12 @@ class BetaDistribution():
         mean = min(1.0-1e-6, self.mean() / Y.mean())
 
         var = (self.variance() + self.mean()**2) * (Y.variance()+Y.mean()**2)/(Y.mean()**4) - (self.mean()/Y.mean())**2
+
+        # [yminusselfalpha, yminusselfbeta] = self._moment_matching(self.mean() - Y.mean() + self.mean()*Y.mean(), (self.sum(Y)).variance())
+        # negself = BetaDistribution(yminusselfalpha, yminusselfbeta)
+        # mean = min(1.0 - 1e-6, self.mean() / (self.mean() + negself.mean()))
+        #
+        # var = mean**2 * (1- mean)**2 * (self.variance()/((self.mean())**2) + negself.variance() / ((negself.mean())**2) - 2 * (self.product(negself)).variance() / (self.mean() + negself.mean()))
 
         # var = scipy.special.beta(self.getAlpha() + 2, self.getBeta()) * scipy.special.beta(Y.getAlpha() - 2, Y.getBeta()) / \
         #        (scipy.special.beta(self.getAlpha(), self.getBeta()) * scipy.special.beta(Y.getAlpha(), Y.getBeta()))
@@ -268,3 +282,94 @@ class BetaDistribution():
         #     beta = 2.0/valueu * (1 - valueb - valueu) + 1
 
         return BetaDistribution(alpha, beta)
+
+
+class BetaMeanVar():
+
+    def isCompleteBelief(self):
+        if self.mean() > 0.999 and self.variance() < 0.0001:
+            return True
+        return False
+
+    def _moment_matching(self, mean, var):
+
+        if var == 0:
+            var = 1e-10
+
+        sx = ((mean * (1 - mean)) / var - 1)
+
+        # if mean * (1-mean) < 1e-2 and var < 1e-4:
+        #     sx = 1.0 / var
+
+        alpha = max(0.01, mean * sx)
+        beta = max(0.01, (1 - mean) * sx)
+        # alpha = max(0.1, mean * (mean - mean**2 - var) / var)
+        # beta = max(0.1, (1.0 - mean) * (mean - mean**2 - var) / var )
+        return BetaDistribution(alpha, beta)
+
+    def __init__(self, m, v):
+        self.mu = float(m)
+        self.var = float(v)
+
+    def getBetaDistribution(self):
+        return self._moment_matching(self.mu, self.var)
+
+    def mean(self):
+        return self.mu
+
+    def variance(self):
+        return self.var
+
+    def sum(self, Y):
+        mean = self.mean() + Y.mean()
+        var = self.variance() + Y.variance()
+
+        # mean = self.mean() + Y.mean() - self.mean() * Y.mean()
+        # var = self.variance() + 2 * Y.mean() * self.variance() + \
+        #       Y.variance() + 2 * self.mean() * Y.variance() + \
+        #       self.variance() * Y.variance() + self.variance() * (Y.mean()) ** 2 + (self.mean()) ** 2 * Y.variance()
+
+        var = min(var, mean ** 2 * (1.0 - mean) / (1.0 + mean), (1.0 - mean) ** 2 * mean / (2 - mean))
+
+        return BetaMeanVar(mean,var)
+
+    def product(self, Y):
+        mean = self.mean() * Y.mean()
+        var = self.variance() * Y.variance() + \
+              self.variance() * (Y.mean())**2 + Y.variance() * (self.mean()) ** 2
+
+        var = min(var, mean ** 2 * (1.0 - mean) / (1.0 + mean), (1.0 - mean) ** 2 * mean / (2 - mean))
+
+        return BetaMeanVar(mean, var)
+
+    def negate(self):
+        if not 0 <= self.mean() <= 1:
+            raise Exception("Error with negation: [%f, %f]", (self.mean(), self.variance()))
+        return BetaMeanVar(1.0 - self.mean(), self.variance())
+
+    def division(self, Y):
+        mean = min(1.0-1e-6, self.mean() / Y.mean())
+
+        muneg = Y.mean() - self.mean() #+ Y.mean() * self.mean()
+        varneg = Y.variance() - self.variance()
+        #varneg = (Y.variance() - self.variance() -2 * muneg * self.variance() - self.variance() * (muneg**2)) / (1 + 2 * self.mean() + self.variance() + (self.mean()**2))
+
+        product = self.product(BetaMeanVar(muneg, varneg))
+
+
+        if self.mu == 0:
+            self.mu = 1e-10
+
+        if muneg == 0:
+            muneg = 1e-10
+
+        var = mean**2 * (1.0-mean)**2 * ((self.variance() / (self.mu**2)) + (varneg / (muneg**2)) - 2 * (product.variance()/(self.mu * muneg)))
+
+        #var = (self.variance() + self.mean()**2) * (Y.variance()+Y.mean()**2)/(Y.mean()**4) - (self.mean()/Y.mean())**2
+
+        var = min(var, mean ** 2 * (1.0 - mean) / (1.0 + mean), (1.0 - mean) ** 2 * mean / (2 - mean))
+
+        return BetaMeanVar(mean, var)
+
+    def __repr__(self):
+        return "b(%.6f, %.6f)" % (self.mean(), self.variance())
